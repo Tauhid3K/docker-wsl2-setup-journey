@@ -1,26 +1,30 @@
-# 🐧 WSL2 + Docker Desktop Setup & Troubleshooting Journey (Windows 11)
+# 🐧 WSL2 + Kali (Learning) + Docker Desktop (Windows) — Setup & Troubleshooting Journey
 
-A practical, step-by-step record of my **real debugging journey** while setting up **WSL2 (Windows Subsystem for Linux)** and **Docker Desktop** on Windows 11.
+This repo documents my **real troubleshooting journey** on Windows 11 while:
 
-This is **not just a clean “how-to”**—it includes the messy parts: broken services, missing features, confusing errors, and the fixes that finally worked.
+- Installing **WSL2** to **learn Kali Linux**
+- Installing **Docker Desktop on Windows** to learn Docker (and later tools like automation platforms)
+- Fixing the **conflicts** that happened when WSL wasn’t healthy, which caused Docker Desktop to fail or behave strangely
+
+It’s written as both a **guide** (clean steps) and **notes** (what went wrong + what fixed it).
 
 ---
 
-## 📌 What’s Inside
+## 📌 Quick Summary (How I Use This Setup)
 
-- ✅ A **setup checklist** for WSL2 + Docker Desktop (WSL backend)
-- 🧩 Common **error messages** and what they actually mean
-- 🛠️ The **fixes I tried** (including what *didn’t* work)
-- 🧠 Lessons learned + final working setup
+- ✅ **Kali Linux** runs inside **WSL2** for learning/practice
+- ✅ **Docker runs on Windows via Docker Desktop**
+- ⚙️ Docker Desktop can use the **WSL2 backend**; when WSL is broken, Docker can also break
+- 🔌 WSL Integration in Docker Desktop is **optional** unless you want Docker CLI/tools inside a distro
 
 ---
 
 ## 🎯 Goals
 
-- Install and run **WSL2** (Ubuntu + Kali Linux)
-- Run **Docker Desktop** with the **WSL2 backend**
-- Understand critical **Windows service & feature dependencies**
-- Document the **real troubleshooting process** for future reference
+- Get **WSL2 stable** on Windows 11
+- Install **Kali from Microsoft Store** and keep it working reliably
+- Install **Docker Desktop** and avoid WSL/Docker conflicts
+- Document the **real errors** and the fixes that worked
 
 ---
 
@@ -29,74 +33,99 @@ This is **not just a clean “how-to”**—it includes the messy parts: broken 
 | Item | Details |
 | --- | --- |
 | **OS** | Windows 11 Home |
-| **WSL** | WSL2 (Ubuntu + Kali Linux attempted) |
-| **Docker** | Docker Desktop (latest) |
+| **WSL** | WSL2 (Kali Linux via Microsoft Store) |
+| **Docker** | Docker Desktop (Windows) |
 | **Shell** | PowerShell / CMD (Admin) |
 | **Hardware** | Virtualization enabled (Intel VT-x / AMD SVM) |
 
 ---
 
-## ❌ Problems Faced (Real Errors)
-
-1. **WSL not starting**
-   - Error: `Wsl/0x80070422` → *The service cannot be started…*
-   - Cause: Disabled/missing Windows services
-
-2. **Missing WSL service**
-   - `LxssManager` service not found
-   - WSL commands failing completely
-
-3. **Docker dependency issue**
-   - Docker Desktop requires WSL2 backend
-   - Docker failed to start because WSL was broken
-
-4. **Installation failures**
-   - `wsl --install` → *The system cannot find the path specified*
-   - Partial installs caused a corrupted/broken WSL state
-
-5. **Broken system state**
-   - Inconsistent Windows feature registration
-   - Missing services (VM Compute, Windows Update, etc.)
-   - Hyper‑V confusion on Windows 11 Home
-
-6. **Kali Linux WSL crash**
-   - `ERROR_FILE_NOT_FOUND` (`ext4.vhdx` missing)
-   - Corrupted/missing WSL virtual disk
-
-7. **Docker + WSL integration failure**
-   - Docker couldn’t connect to Kali Linux
-   - Integration toggles missing / not showing distros
-
----
-
-## 🧪 What I Tried
-
-### Windows features (manual enable)
-
-- `Microsoft-Windows-Subsystem-Linux`
-- `VirtualMachinePlatform`
-
-### Recovery attempts
-
-- DISM repairs / restore health
-- Multiple restarts
-- `wsl --install` and `winget install Microsoft.WSL`
-- Service checks (`LxssManager`, `vmcompute`, Windows Update)
-- Docker reinstall
-- Reset/unregister broken distros
-
----
-
-## 🛠️ Fixes That Helped (Checklist)
+## ✅ Clean Setup Guide (Recommended Order)
 
 ### 1) Enable required Windows features
 
-```powershell name=README.md
+```powershell
+# Run in an elevated PowerShell / Terminal
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 ```
 
-### 2) Ensure required services are enabled
+Restart Windows after enabling features.
+
+### 2) Install / update WSL
+
+```powershell
+wsl --install
+wsl --set-default-version 2
+wsl --update
+```
+
+### 3) Install Kali Linux (Microsoft Store)
+
+- Install **Kali Linux** from Microsoft Store
+- Launch it once to complete initial setup
+
+Useful checks:
+
+```powershell
+wsl -l -v
+```
+
+### 4) Install Docker Desktop (Windows)
+
+- Install Docker Desktop normally on Windows
+- Choose/keep **Use WSL 2 based engine** (recommended)
+
+### 5) (Optional) Enable Docker → WSL Integration
+
+Only needed if you want Docker tools inside a distro:
+
+- Docker Desktop → **Settings** → **Resources** → **WSL Integration**
+- Enable integration for the distro(s) you want
+
+---
+
+## ❌ What Went Wrong (Conflicts I Hit)
+
+These are the main conflict patterns I ran into:
+
+1. **WSL not starting**
+   - Error: `Wsl/0x80070422` → *The service cannot be started…*
+   - Usually means a required Windows service is disabled
+
+2. **Missing WSL service / WSL not properly registered**
+   - `LxssManager` service not found
+   - WSL commands failing completely
+
+3. **Docker Desktop depends on WSL2 being healthy**
+   - When WSL is broken, Docker Desktop (WSL2 backend) may fail to start or behave inconsistently
+
+4. **Install/repair failures**
+   - `wsl --install` → *The system cannot find the path specified*
+   - Partial installs can leave Windows in a half-configured state
+
+5. **Kali Linux WSL crash**
+   - `ERROR_FILE_NOT_FOUND` (often `ext4.vhdx` missing)
+   - Can happen if the distro storage is corrupted or removed
+
+---
+
+## 🛠️ Fixes That Helped (My Checklist)
+
+### A) Confirm WSL status
+
+```powershell
+wsl --status
+wsl -l -v
+```
+
+### B) Restart WSL
+
+```powershell
+wsl --shutdown
+```
+
+### C) Ensure required services are enabled
 
 These mattered a lot in my case:
 
@@ -104,90 +133,49 @@ These mattered a lot in my case:
 - **Background Intelligent Transfer Service (BITS)**
 - **VM Compute Service** (`vmcompute`)
 
-### 3) Enable BIOS virtualization
+### D) Repair WSL
 
-Make sure this is enabled in BIOS/UEFI:
-
-- **Intel VT-x** or **AMD SVM**
-
-### 4) Install / repair WSL properly
-
-```powershell name=README.md
-wsl --install
-wsl --set-default-version 2
+```powershell
+wsl --update
 ```
 
-If WSL is broken and needs a reset:
+If things are badly broken, re-check Windows features (Step 1) and restart.
 
-```powershell name=README.md
-wsl --shutdown
+### E) Reset a broken distro (last resort)
+
+If a distro is corrupted (example: missing `ext4.vhdx`), unregistering it resets it completely:
+
+```powershell
 wsl --unregister <distro-name>
 ```
 
-### 5) Install Ubuntu (stable baseline distro)
-
-```powershell name=README.md
-wsl --install -d Ubuntu
-```
-
-### 6) Fix Docker integration
-
-In **Docker Desktop**:
-
-- **Settings → Resources → WSL Integration**
-- Enable integration for your distro(s) (Ubuntu/Kali)
+Then reinstall Kali from Microsoft Store.
 
 ---
 
-## 🧠 Key Findings
+## 🧠 Key Findings (What I Learned)
 
-- WSL is not “just an app” → it’s a **Windows system feature**.
-- Docker Desktop depends heavily on the **WSL2 backend**.
-- If **`LxssManager` is missing**, WSL is **not properly registered**.
-- Error **`0x80070422`** usually means a **required service is disabled/not created**.
-- Partial installs can leave Windows in a **half-configured state**.
-
----
-
-## 💡 Lessons Learned
-
-- Check Windows **services and features** before blaming Docker.
-- Avoid disabling “unnecessary” services without understanding dependencies.
-- Many WSL failures are **system-level**, not distro-level.
-- Sometimes a **repair install** is faster than days of debugging.
+- WSL is not “just an app” → it relies on **Windows features + services**.
+- Docker Desktop with the WSL2 backend will often fail if WSL is broken.
+- Error **`0x80070422`** usually points to a **disabled Windows service**.
+- If **`LxssManager` is missing**, WSL is likely **not installed/registered correctly**.
+- Kali is great for learning, but it’s best to keep **Docker Desktop as the Docker runtime on Windows** to reduce complexity.
 
 ---
 
-## 🐳 Final Setup Architecture (Working)
+## 🐳 Final Setup (Working)
 
-```text name=README.md
+```text
 Windows 11
-  ├─ WSL2 (Ubuntu + Kali Linux)
-  ├─ Docker Desktop (WSL2 backend)
-  └─ Tools (n8n, dev containers, VS Code)
+  ├─ WSL2: Kali Linux (learning)
+  └─ Docker Desktop: Docker runtime on Windows (WSL2 backend)
 ```
 
-### ✅ Result
-
-- ✔ WSL2 restored and functional
-- ✔ Ubuntu + Kali Linux working properly
-- ✔ Docker Desktop integrated with WSL2
-- ✔ Stable development environment achieved
-
 ---
-
-## 🚀 Future Plan
-
-- Restore Kali Linux environment cleanly
-- Reinstall Docker Desktop with proper integration
-- Document the final stable setup with screenshots
-
----
-
 
 ## 🏷️ Tags
 
-`WSL` `Docker` `Windows 11` `Kali Linux` `Ubuntu` `DevOps` `Troubleshooting` `System Administration`
+`WSL` `Docker Desktop` `Windows 11` `Kali Linux` `Troubleshooting`
 
 ---
 
@@ -196,8 +184,7 @@ Windows 11
 This repository exists to:
 
 - Document real-world setup problems
-- Help beginners fix WSL2 + Docker issues
-- Share troubleshooting experience
-- Save time for others facing the same errors
+- Keep a personal troubleshooting log
+- Help others fix WSL2 + Docker Desktop conflicts faster
 
-If you found this helpful, consider starring the repo ⭐ or opening an issue if you’re stuck.
+If you found this helpful, consider starring the repo.
