@@ -184,12 +184,6 @@ Windows 11
 
 ---
 
-## 🧑‍💻 Author
-
-**Tauhid Shahriar**  
-CSE Student | Developer | IoT & Android Enthusiast
-
----
 
 ## 🏷️ Tags
 
